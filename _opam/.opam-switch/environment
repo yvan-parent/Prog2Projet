@@ -1,0 +1,7 @@
+OPAM_SWITCH_PREFIX	=	/home/dev/work/prog2/Prog2Projet/_opam	:	target	Prefix\ of\ the\ current\ opam\ switch
+CAML_LD_LIBRARY_PATH	=	/home/dev/work/prog2/Prog2Projet/_opam/lib/stublibs	:	target	Updated\ by\ package\ ocaml-base-compiler
+CAML_LD_LIBRARY_PATH	=	/home/dev/work/prog2/Prog2Projet/_opam/lib/ocaml/stublibs:/home/dev/work/prog2/Prog2Projet/_opam/lib/ocaml	:	target	Updated\ by\ package\ ocaml
+CAML_LD_LIBRARY_PATH	+=	/home/dev/work/prog2/Prog2Projet/_opam/lib/stublibs	:	target	Updated\ by\ package\ ocaml
+OCAML_TOPLEVEL_PATH	=	/home/dev/work/prog2/Prog2Projet/_opam/lib/toplevel	Updated\ by\ package\ ocaml
+MANPATH	=:	/home/dev/work/prog2/Prog2Projet/_opam/man	:	host	Current\ opam\ switch\ man\ dir
+PATH	=+=	/home/dev/work/prog2/Prog2Projet/_opam/bin	:	target	Binary\ dir\ for\ opam\ switch\ /home/dev/work/prog2/Prog2Projet
