@@ -1,6 +1,5 @@
 (* Once you are done writing the code, remove this directive,
    whose purpose is to disable several warnings. *)
-[@@@warning "-26-27-33"]
 
 (* You should read and understand active_borrows.ml *fully*, before filling the holes
   in this file. The analysis in this file follows the same structure. *)
@@ -59,7 +58,11 @@ let go prog mir : analysis_results =
 
   (* Effect of using (copying or moving) a place [pl] on the abstract state [state]. *)
   let move_or_copy pl state =
-    state (* TODO : This code is incorrect. Replace with correct code. *)
+    let is_copy = typ_is_copy prog (typ_of_place prog mir pl) in 
+    if is_copy then
+      state
+    else
+      deinitialize pl state
   in
 
   (* These modules are parameters of the [Fix.DataFlow.ForIntSegment] functor below. *)
@@ -77,10 +80,42 @@ let go prog mir : analysis_results =
       similar data flow analysis. *)
 
     let foreach_root go =
-      () (* TODO *)
+      let inter = all_places in
+      go mir.mentry inter
 
     let foreach_successor lbl state go =
-        () (* TODO *)
+      let label = fst mir.minstrs.(lbl) in
+      match label with
+      | Iassign (pl, rvalue, new_label) -> 
+            let new_state = 
+              match rvalue with 
+                | RVplace pll -> move_or_copy pll state
+                | RVconst _ -> state
+                | RVunit -> state
+                | RVborrow (_, pll) -> move_or_copy pll state
+                | RVbinop (_, pl1, pl2) -> 
+                  (
+                    let inter = move_or_copy pl1 state in
+                    move_or_copy pl2 inter
+                  )
+                | RVunop (_, pll) -> move_or_copy pll state
+                | RVmake (_, pl_list) -> List.fold_right move_or_copy pl_list state
+            in
+            let new_state = initialize pl new_state in
+            go new_label new_state
+      | Ideinit (local, new_label) ->
+            let new_state = deinitialize (PlLocal local) state in
+            go new_label new_state
+      | Igoto new_label -> go new_label state
+      | Iif (pl, new_label1, new_label2) ->
+            let new_state = move_or_copy pl state in
+            go new_label1 new_state;
+            go new_label2 new_state
+      | Ireturn -> ()
+      | Icall (_, pl_list, pl, new_label) ->
+            let new_state = List.fold_right move_or_copy pl_list state in
+            let new_state2 = initialize pl new_state in
+            go new_label new_state2
   end in
   let module Fix = Fix.DataFlow.ForIntSegment (Instrs) (Prop) (Graph) in
   fun i -> Option.value (Fix.solution i) ~default:PlaceSet.empty
