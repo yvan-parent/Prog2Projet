@@ -117,11 +117,40 @@ let borrowck prog mir =
 
   (* We check the code honors the non-mutability of shared borrows. *)
   Array.iteri
-    (fun _ (instr, loc) ->
+    (fun lbl (instr, loc) ->
       (* TODO: check that we never write to shared borrows, and that we never create mutable borrows
         below shared borrows. Function [place_mut] can be used to determine if a place is mutable, i.e., if it
         does not dereference a shared borrow. *)
-      ()
+      (
+        match instr with
+        | Iassign (pl, rval, label) ->
+          (
+            let pl_mutable = place_mut prog mir pl in 
+            (
+              match pl_mutable with 
+              | Mut -> ()
+              | NotMut -> Error.error loc "variable not mutable can't have a new value assigned to it"
+            );
+            (
+              match rval with 
+              | RVborrow (mut, pll) -> 
+                (
+                  match mut with 
+                  | NotMut -> ()
+                  | Mut -> (
+                    let pll_mutable = place_mut prog mir pll in 
+                    (
+                      match pl_mutable with 
+                      | Mut -> ()
+                      | NotMut ->  Error.error loc "cannot create a new mutable variable under a non mutable one";
+                    )   
+                  )
+                )
+              | _ -> ()
+            )
+          )
+        | _ -> ()
+      )
     )
     mir.minstrs;
 
